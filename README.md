@@ -9,6 +9,7 @@
 ```bash
 # 適宜実行
 docker run -it --name valkey -p 6379:6379 -d valkey/valkey
+export SESSION_STORE=redis
 
 yarn dev
 ```
