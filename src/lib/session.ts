@@ -1,10 +1,10 @@
 import crypto from "crypto";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
-import { Logger } from "tslog";
 
+// import { Logger } from "tslog";
 import { keyv, type SessionValue } from "@/lib/db/keyv";
 
-const console = new Logger();
+// const console = new Logger();
 
 export default class Session {
   constructor(private cookies: ReadonlyRequestCookies) {}
@@ -18,13 +18,6 @@ export default class Session {
 
     if (sessionId !== undefined) {
       const sessionValue = await keyv.get(sessionId);
-      console.debug(
-        Session.name,
-        this.start.name,
-        "sessionId",
-        sessionId,
-        sessionValue,
-      );
       if (sessionValue !== undefined) {
         this.id = sessionId;
         this.value = sessionValue;
@@ -94,25 +87,11 @@ export default class Session {
         const result = Reflect.set(target, prop, value, receiver);
         setTimeout(async () => {
           await keyv.set(this.id!, target, this.ttl);
-          console.debug(
-            Session.name,
-            this.createAutoSavingProxy.name,
-            this.id,
-            prop,
-            value,
-          );
         }, 0);
         return result;
       },
     };
     const proxy = new Proxy(target, handler);
-    console.debug(
-      Session.name,
-      this.createAutoSavingProxy.name,
-      this.id,
-      "create proxy",
-      proxy,
-    );
     return proxy;
   }
 }
