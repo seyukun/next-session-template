@@ -1,18 +1,10 @@
-import KeyvRedis from "@keyv/redis";
 import crypto from "crypto";
-import Keyv from "keyv";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { Logger } from "tslog";
 
-const keyv = new Keyv<SessionValue>(
-  new KeyvRedis({ url: "redis://localhost:6379" }),
-);
+import { keyv, type SessionValue } from "@/lib/db/keyv";
 
 const console = new Logger();
-
-type SessionValue = {
-  [key: string]: string;
-};
 
 export default class Session {
   constructor(private cookies: ReadonlyRequestCookies) {}
@@ -37,26 +29,11 @@ export default class Session {
         this.id = sessionId;
         this.value = sessionValue;
         this.value.updatedAt = new Date(Date.now() + this.ttl).toISOString();
-        console.debug(
-          Session.name,
-          this.start.name,
-          "session exists",
-          this.id,
-          sessionValue,
-          this.value,
-        );
       } else {
         this.id = crypto.randomBytes(16).toString("hex");
         this.value = {
           updatedAt: new Date(Date.now() + this.ttl).toISOString(),
         };
-        console.debug(
-          Session.name,
-          this.start.name,
-          "session expired",
-          this.id,
-          this.value,
-        );
         await keyv.set(this.id, this.value, this.ttl);
       }
     } else {
@@ -64,13 +41,6 @@ export default class Session {
       this.value = {
         updatedAt: new Date(Date.now() + this.ttl).toISOString(),
       };
-      console.debug(
-        Session.name,
-        this.start.name,
-        "session not exists, create new",
-        this.id,
-        this.value,
-      );
     }
     await keyv.set(this.id, this.value, this.ttl);
     this.cookies.set("sessid", this.id, {
