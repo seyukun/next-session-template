@@ -17,6 +17,7 @@ export async function isLoggedIn() {
   const session = new Session(cookieStore);
   const sessval = await session.start();
   console.debug(isLoggedIn.name, "cookies after", cookieStore.getAll());
+  console.debug(sessval);
   const userId = sessval["userid"];
 
   const user = isExist(userId)

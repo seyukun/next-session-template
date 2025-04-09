@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@headlessui/react": "latest",
+    "@keyv/redis": "^4.3.3",
+    "@keyv/sqlite": "^4.0.2",
     "@prisma/client": "^6.5.0",
     "crypto": "^1.0.1",
     "next": "15.2.4",

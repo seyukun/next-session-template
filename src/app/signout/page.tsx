@@ -25,12 +25,8 @@ export default function Page() {
   }, [setForm, router]);
 
   async function handleSignout() {
-    const result = await signout();
-    switch (result.code) {
-      case 200:
-        router.push("/signin");
-        break;
-    }
+    await signout();
+    router.push("/signin");
   }
 
   return (

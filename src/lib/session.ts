@@ -1,9 +1,12 @@
+import KeyvRedis from "@keyv/redis";
 import crypto from "crypto";
 import Keyv from "keyv";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { Logger } from "tslog";
 
-const keyv = new Keyv<SessionValue>();
+const keyv = new Keyv<SessionValue>(
+  new KeyvRedis({ url: "redis://localhost:6379" }),
+);
 
 const console = new Logger();
 
@@ -21,27 +24,59 @@ export default class Session {
   public async start(): Promise<SessionValue> {
     const sessionId = this.cookies.get("sessid")?.value;
 
-    let sessionValue: SessionValue | undefined = undefined;
-
     if (sessionId !== undefined) {
-      sessionValue = (await keyv.get(sessionId)) ?? undefined;
-    }
-
-    if (sessionId && sessionValue) {
-      this.id = sessionId;
-      this.value = sessionValue;
+      const sessionValue = await keyv.get(sessionId);
+      console.debug(
+        Session.name,
+        this.start.name,
+        "sessionId",
+        sessionId,
+        sessionValue,
+      );
+      if (sessionValue !== undefined) {
+        this.id = sessionId;
+        this.value = sessionValue;
+        this.value.updatedAt = new Date(Date.now() + this.ttl).toISOString();
+        console.debug(
+          Session.name,
+          this.start.name,
+          "session exists",
+          this.id,
+          sessionValue,
+          this.value,
+        );
+      } else {
+        this.id = crypto.randomBytes(16).toString("hex");
+        this.value = {
+          updatedAt: new Date(Date.now() + this.ttl).toISOString(),
+        };
+        console.debug(
+          Session.name,
+          this.start.name,
+          "session expired",
+          this.id,
+          this.value,
+        );
+        await keyv.set(this.id, this.value, this.ttl);
+      }
     } else {
       this.id = crypto.randomBytes(16).toString("hex");
-
-      this.cookies.set("sessid", this.id, {
-        path: "/",
-        expires: new Date(Date.now() + this.ttl),
-      });
-
-      this.value = {};
-      await keyv.set(this.id, this.value, this.ttl);
+      this.value = {
+        updatedAt: new Date(Date.now() + this.ttl).toISOString(),
+      };
+      console.debug(
+        Session.name,
+        this.start.name,
+        "session not exists, create new",
+        this.id,
+        this.value,
+      );
     }
-
+    await keyv.set(this.id, this.value, this.ttl);
+    this.cookies.set("sessid", this.id, {
+      path: "/",
+      expires: new Date(Date.now() + this.ttl),
+    });
     return this.createAutoSavingProxy(this.value);
   }
 
@@ -104,6 +139,7 @@ export default class Session {
     console.debug(
       Session.name,
       this.createAutoSavingProxy.name,
+      this.id,
       "create proxy",
       proxy,
     );

@@ -24,7 +24,7 @@ export async function signin(email: string, password: string) {
   if (user) {
     console.debug(signin.name, "OK", email);
     sessval["userid"] = user.id;
-    session.regenerate();
+    // session.regenerate();
     return {
       code: 200,
       status: "OK",
