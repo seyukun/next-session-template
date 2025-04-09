@@ -3,13 +3,10 @@
 import { PrismaClient } from "@prisma/client";
 import { createHmac as hmac } from "crypto";
 import { cookies } from "next/headers";
-import { Logger } from "tslog";
 
 import Session from "@/lib/session";
 
 const prisma = new PrismaClient();
-
-const console = new Logger();
 
 export async function signup(
   username: string,
@@ -24,7 +21,6 @@ export async function signup(
     where: { OR: [{ email: email }, { username: username }] },
   });
   if (existUser.length > 0) {
-    console.debug(signup.name, "FAILED", username, email);
     return {
       code: 409,
       status: "Conflict",
@@ -47,7 +43,6 @@ export async function signup(
     };
   }
 
-  console.debug(signup.name, "FAILED", username, email);
   return {
     code: 501,
     status: "Internal Server Error",

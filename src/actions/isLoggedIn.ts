@@ -26,13 +26,5 @@ export async function isLoggedIn() {
       })
     : undefined;
 
-  console.debug(
-    isLoggedIn.name,
-    session.id,
-    userId,
-    user?.id ?? "user not found",
-    isExist(user),
-  );
-
   return isExist(user);
 }
