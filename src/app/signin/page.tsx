@@ -48,7 +48,7 @@ export default function Page() {
         <div className="flex flex-col gap-10">
           <div className="flex items-center justify-center">
             <Image
-              src="/next.svg"
+              src="/logo.svg"
               alt={"corp logo"}
               width={0}
               height={0}

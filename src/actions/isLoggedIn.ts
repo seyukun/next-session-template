@@ -10,7 +10,6 @@ const prisma = new PrismaClient();
 
 export async function isLoggedIn() {
   const cookieStore = await cookies();
-  console.debug(isLoggedIn.name, "cookies before", cookieStore.getAll());
   const session = new Session(cookieStore);
   const sessval = await session.start();
   const userId = sessval["userid"];
