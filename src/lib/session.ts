@@ -1,6 +1,6 @@
-import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import crypto from "crypto";
 import Keyv from "keyv";
+import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 import { Logger } from "tslog";
 
 const keyv = new Keyv<SessionValue>();
@@ -14,12 +14,13 @@ type SessionValue = {
 export default class Session {
   constructor(private cookies: ReadonlyRequestCookies) {}
 
-  private ttl = 60 * 30 * 1000; // 30 minutes
-  private id: string | undefined = undefined;
+  public id: string | undefined = undefined;
   private value: SessionValue = {};
+  private ttl = 60 * 30 * 1000; // 30 minutes
 
   public async start(): Promise<SessionValue> {
-    let sessionId = this.cookies.get("sessid")?.value;
+    const sessionId = this.cookies.get("sessid")?.value;
+
     let sessionValue: SessionValue | undefined = undefined;
 
     if (sessionId !== undefined) {
@@ -31,13 +32,14 @@ export default class Session {
       this.value = sessionValue;
     } else {
       this.id = crypto.randomBytes(16).toString("hex");
+
       this.cookies.set("sessid", this.id, {
         path: "/",
         expires: new Date(Date.now() + this.ttl),
       });
 
-      // TTL 30min
-      await keyv.set(this.id, {}, this.ttl);
+      this.value = {};
+      await keyv.set(this.id, this.value, this.ttl);
     }
 
     return this.createAutoSavingProxy(this.value);
@@ -84,12 +86,27 @@ export default class Session {
   private createAutoSavingProxy(target: SessionValue): SessionValue {
     const handler: ProxyHandler<SessionValue> = {
       set: (target, prop, value, receiver) => {
-        console.debug("Setting session value", prop, value);
         const result = Reflect.set(target, prop, value, receiver);
-        keyv.set(this.id!, target, this.ttl);
+        setTimeout(async () => {
+          await keyv.set(this.id!, target, this.ttl);
+          console.debug(
+            Session.name,
+            this.createAutoSavingProxy.name,
+            this.id,
+            prop,
+            value,
+          );
+        }, 0);
         return result;
       },
     };
-    return new Proxy(target, handler);
+    const proxy = new Proxy(target, handler);
+    console.debug(
+      Session.name,
+      this.createAutoSavingProxy.name,
+      "create proxy",
+      proxy,
+    );
+    return proxy;
   }
 }

@@ -3,12 +3,12 @@
 import { Button, Field, Input, Label } from "@headlessui/react";
 import Form from "next/form";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { isLoggedIn } from "@/actions/isLoggedIn";
-import { signup } from "@/actions/signup";
-import isExist from "@/helper/isExist";
+import { signin } from "@/actions/signin";
 
 export default function Page() {
   const router = useRouter();
@@ -17,7 +17,8 @@ export default function Page() {
   const [form, setForm] = useState(false);
   useEffect(() => {
     (async () => {
-      if (await isLoggedIn()) {
+      const loggedIn = await isLoggedIn();
+      if (loggedIn) {
         router.push("/dashboard");
       } else {
         setForm(true);
@@ -27,39 +28,17 @@ export default function Page() {
 
   // Signin message
   const [message, setMessage] = useState<string | null>(null);
-  async function handleSignup(formData: FormData) {
-    setForm(false);
-
-    const username = formData.get("username")?.toString();
-    const email = formData.get("email")?.toString();
-    const password = formData.get("password")?.toString();
-    const confirmPassword = formData.get("_password")?.toString();
-    if (!isExist(username)) {
-      setMessage("Username is required");
-      return;
-    }
-    if (!isExist(email)) {
-      setMessage("Email is required");
-      return;
-    }
-    if (!isExist(password)) {
-      setMessage("Password is required");
-      return;
-    }
-    if (password !== confirmPassword) {
-      setMessage("Password and confirm password do not match");
-      return;
-    }
-
-    const result = await signup(username, email, password);
-
+  async function handleSignin(formData: FormData) {
+    const result = await signin(
+      String(formData.get("email")),
+      String(formData.get("password")),
+    );
     switch (result.code) {
       case 200:
-        router.push("/signin");
+        router.push("/dashboard");
         break;
       default:
         setMessage(result.message);
-        setForm(true);
     }
   }
 
@@ -77,7 +56,7 @@ export default function Page() {
             />
           </div>
           {form ? (
-            <Form action={handleSignup}>
+            <Form action={handleSignin}>
               {message && (
                 <Field className="mb-4 flex rounded-md bg-red-200 p-4">
                   <Label className="px-3 font-medium text-red-800">
@@ -86,41 +65,22 @@ export default function Page() {
                 </Field>
               )}
               <Field className="flex flex-col gap-2">
-                <Label className="font-medium">Username</Label>
-                <Input
-                  type="username"
-                  name="username"
-                  placeholder="Enter the username"
-                  className="h-10 w-full appearance-none rounded-lg bg-white px-3 outline -outline-offset-1 outline-gray-950/15 focus:outline-gray-950 data-error:outline-rose-500 sm:text-sm dark:bg-gray-50"
-                  required={true}
-                />
-              </Field>
-              <Field className="mt-6 flex flex-col gap-2">
                 <Label className="font-medium">Email</Label>
                 <Input
                   type="email"
                   name="email"
-                  placeholder="Enter your@email.address"
                   className="h-10 w-full appearance-none rounded-lg bg-white px-3 outline -outline-offset-1 outline-gray-950/15 focus:outline-gray-950 data-error:outline-rose-500 sm:text-sm dark:bg-gray-50"
                   required={true}
                 />
               </Field>
-              <Field className="mt-6 flex flex-col gap-2">
+              <Field className="relative mt-6 flex flex-col gap-2">
                 <Label className="font-medium">Password</Label>
+                <Label className="absolute top-0 right-0">
+                  <Link href={""}>Forgot password?</Link>
+                </Label>
                 <Input
                   type="password"
                   name="password"
-                  placeholder="Enter the password"
-                  className="h-10 w-full appearance-none rounded-lg bg-white px-3 outline -outline-offset-1 outline-gray-950/15 focus:outline-gray-950 data-error:outline-rose-500 sm:text-sm dark:bg-gray-50"
-                  required={true}
-                />
-              </Field>
-              <Field className="mt-6 flex flex-col gap-2">
-                <Label className="font-medium">Comfirm Password</Label>
-                <Input
-                  type="password"
-                  name="_password"
-                  placeholder="Comfirm the password"
                   className="h-10 w-full appearance-none rounded-lg bg-white px-3 outline -outline-offset-1 outline-gray-950/15 focus:outline-gray-950 data-error:outline-rose-500 sm:text-sm dark:bg-gray-50"
                   required={true}
                 />
@@ -129,8 +89,19 @@ export default function Page() {
                 type="submit"
                 className="mt-10 inline-flex w-full justify-center rounded-full bg-gray-950 px-4 py-2 text-sm/6 font-semibold text-white hover:bg-gray-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-950"
               >
-                Sign up
+                Sign in to account
               </Button>
+              <Field className="mt-6 flex gap-2">
+                <Label className="text-gray-600">
+                  Don{"'"}t have an account?
+                </Label>
+                <Link
+                  className="font-semibold hover:text-gray-700"
+                  href={"/signup"}
+                >
+                  Get access <span aria-hidden="true">→</span>
+                </Link>
+              </Field>
             </Form>
           ) : (
             <div className="my-20 flex justify-center">
