@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
 
-// import { Logger } from "tslog";
 import { keyv, type SessionValue } from "@/lib/db/keyv";
 
 // const console = new Logger();
@@ -14,29 +13,33 @@ export default class Session {
   private ttl = 60 * 30 * 1000; // 30 minutes
 
   public async start(): Promise<SessionValue> {
+    // init
+    this.id = undefined;
+
+    // check if session exists
     const sessionId = this.cookies.get("sessid")?.value;
 
+    // check if session exists in cookie and keyv
     if (sessionId !== undefined) {
       const sessionValue = await keyv.get(sessionId);
       if (sessionValue !== undefined) {
         this.id = sessionId;
         this.value = sessionValue;
         this.value.updatedAt = new Date(Date.now() + this.ttl).toISOString();
-      } else {
-        this.id = crypto.randomBytes(16).toString("hex");
-        this.value = {
-          updatedAt: new Date(Date.now() + this.ttl).toISOString(),
-        };
-        await keyv.set(this.id, this.value, this.ttl);
       }
-    } else {
+    }
+
+    // if session does not exist, create a new one
+    if (this.id === undefined) {
       this.id = crypto.randomBytes(16).toString("hex");
       this.value = {
         updatedAt: new Date(Date.now() + this.ttl).toISOString(),
       };
     }
-    await keyv.set(this.id, this.value, this.ttl);
-    this.cookies.set("sessid", this.id, {
+
+    // set session in keyv and cookie
+    await keyv.set(this.id!, this.value, this.ttl);
+    this.cookies.set("sessid", this.id!, {
       path: "/",
       expires: new Date(Date.now() + this.ttl),
     });
