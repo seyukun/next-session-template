@@ -34,7 +34,6 @@ export async function signup(
   });
 
   if (user) {
-    console.debug(signup.name, "OK", username, email);
     sessval["userid"] = user.id;
     return {
       code: 200,
